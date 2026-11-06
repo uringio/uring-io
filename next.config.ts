@@ -1,13 +1,14 @@
 import { createVanillaExtractPlugin } from '@vanilla-extract/next-plugin';
 import type { NextConfig } from 'next';
 
-// The plugin wires both bundlers from one config; its Turbopack half defaults to `off` and is
-// still experimental upstream (`unstable_turbopack`). `auto` enables it on Next >= 16, and
-// `next build --webpack` remains the fallback with no change to any `.css.ts` file.
+// the plugin wires both bundlers from one config; its Turbopack half defaults to `off` and is still experimental upstream (`unstable_turbopack`). `auto` enables it on Next >= 16, and `next build --webpack` remains the fallback with no change to any `.css.ts` file.
 const withVanillaExtract = createVanillaExtractPlugin({
   unstable_turbopack: { mode: 'auto' },
 });
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  // when `next dev` detects an AI coding agent, it writes a managed block into AGENTS.md that addresses the agent directly, and re-adds it if removed. that makes a dependency an instruction channel into the agent, which this repo keeps closed: agent rules here are hand-written only. with `false`, `next dev` instead strips its block from an existing AGENTS.md (deleting the file if nothing else is left) and leaves hand-written content alone. the block's one useful fact, that version-matched docs ship at `node_modules/next/dist/docs/`, belongs in the hand-written rules if wanted.
+  agentRules: false,
+};
 
 export default withVanillaExtract(nextConfig);
