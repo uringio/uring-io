@@ -38,8 +38,8 @@ export const root = style({
   cursor: 'pointer',
   userSelect: 'none',
   selectors: {
-    // `:has` covers libraries that mark the control inside the label; the plain attribute covers React Aria Components, which marks the label itself
-    '&:has([data-disabled]), &[data-disabled]': {
+    // `:has` covers libraries that mark the control inside the label (and a native disabled input); the plain attribute covers React Aria Components, which marks the label itself
+    '&:has([data-disabled], input:disabled), &[data-disabled]': {
       cursor: 'default',
       color: mix(vars.color.onSurface, 38),
     },
@@ -48,13 +48,15 @@ export const root = style({
     // forced colors replace the dimmed text color with CanvasText, so the disabled label must name the system color itself to stay distinguishable
     '(forced-colors: active)': {
       selectors: {
-        '&:has([data-disabled]), &[data-disabled]': { color: 'GrayText' },
+        '&:has([data-disabled], input:disabled), &[data-disabled]': {
+          color: 'GrayText',
+        },
       },
     },
   },
 });
 
-// rule order is load-bearing: hovered < focusVisible < pressed < disabled share one specificity per map, so later entries win
+// rule order is load-bearing: rules are emitted in the order below, so when two entries can match at once and set the same variable (pressed's 28px handle over selected's 24px, disabled-and-selected over disabled), the later one must not have lower specificity than the earlier
 function trackStyle(on: StateSelectors) {
   return style({
     vars: {
@@ -191,6 +193,33 @@ export const rootStateTrack = trackStyle({
   pressed: onRoot('[data-pressed]'),
   disabled: onRoot('[data-disabled]'),
   disabledSelected: onRoot('[data-disabled][data-selected]'),
+});
+
+// state from a native `<input type="checkbox" role="switch">` inside the root label, read through `:has()` alone, so the switch works with no JavaScript at all. every condition sits in `:where()` to give all entries one specificity, leaving precedence to rule order as for the other maps.
+const onNative = (condition: string) => `${root}:where(${condition}) &`;
+export const nativeTrack = trackStyle({
+  selected: onNative(':has(input:checked)'),
+  hovered: onNative(':hover:not(:has(input:disabled))'),
+  focusVisible: onNative(':has(input:focus-visible)'),
+  pressed: onNative(':active:not(:has(input:disabled))'),
+  disabled: onNative(':has(input:disabled)'),
+  disabledSelected: onNative(':has(input:disabled:checked)'),
+  stickyHover: onNative(
+    ':hover:not(:active):not(:has(input:focus-visible, input:disabled))',
+  ),
+});
+
+// the hidden-input wrapper for the native variant, matching what React Aria's `VisuallyHidden` renders so the two topologies stay comparable
+export const visuallyHidden = style({
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  margin: -1,
+  padding: 0,
+  border: 0,
+  overflow: 'hidden',
+  clipPath: 'inset(50%)',
+  whiteSpace: 'nowrap',
 });
 
 // a 40px box centered on the handle: `::before` paints the state layer behind, `::after` the handle itself, so both move with the thumb and the handle can resize without shifting the layer.

@@ -46,6 +46,14 @@ export default function Home() {
         <li>
           <Link href="/spike/switch-rac">Switch · React Aria Components</Link>
         </li>
+        <li>
+          <Link href="/spike/switch-native">Switch · 原生对照</Link>
+        </li>
+        <li>
+          <Link href="/spike/switch-base-inline">
+            Switch · Base UI（行内布局）
+          </Link>
+        </li>
       </ul>
       <div className={styles.grid}>
         {PAIRS.map(([bg, fg]) => (
