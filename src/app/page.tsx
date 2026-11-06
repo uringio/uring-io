@@ -43,6 +43,9 @@ export default function Home() {
         <li>
           <Link href="/spike/switch-aria">Switch · React Aria</Link>
         </li>
+        <li>
+          <Link href="/spike/switch-rac">Switch · React Aria Components</Link>
+        </li>
       </ul>
       <div className={styles.grid}>
         {PAIRS.map(([bg, fg]) => (

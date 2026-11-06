@@ -1,7 +1,7 @@
 import { createVar, style } from '@vanilla-extract/css';
 import { vars } from '@/styles/theme.css';
 
-// MD3 switch, sized and colored per the @material/web component tokens (`md-comp-switch`, token set v0_192). behavior-agnostic: the same classes style the Base UI and the React Aria implementations, so every state is read from attributes both can produce — `data-checked`/`data-disabled` (Base UI sets them itself; the React Aria wrapper mirrors its hook state onto them), and native `:hover`/`:active`/`:focus-visible` with `data-pressed`/`data-focus-visible` as the hook-driven equivalents.
+// MD3 switch, sized and colored per the @material/web component tokens (`md-comp-switch`, token set v0_192). behavior-agnostic: the visual rules are written once against a state → selector map, and each behavior library gets a track class built from the map that matches where it exposes state (see `track` and `rootStateTrack`).
 
 // state is resolved once on the track into these variables; the thumb and its pseudo-elements only consume them, so no selector has to combine state with structure.
 const trackBg = createVar();
@@ -17,7 +17,16 @@ const thumbX = createVar();
 const mix = (color: string, percent: number) =>
   `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 
-const interactive = ':not([data-disabled])';
+type StateSelectors = {
+  selected: string;
+  hovered: string;
+  focusVisible: string;
+  pressed: string;
+  disabled: string;
+  disabledSelected: string;
+  // set only where hover comes from CSS `:hover`, which sticks after a tap on touch screens: matches a hover-only state so it can be undone there
+  stickyHover?: string;
+};
 
 export const root = style({
   display: 'inline-flex',
@@ -29,7 +38,8 @@ export const root = style({
   cursor: 'pointer',
   userSelect: 'none',
   selectors: {
-    '&:has([data-disabled])': {
+    // `:has` covers libraries that mark the control inside the label; the plain attribute covers React Aria Components, which marks the label itself
+    '&:has([data-disabled]), &[data-disabled]': {
       cursor: 'default',
       color: mix(vars.color.onSurface, 38),
     },
@@ -38,121 +48,149 @@ export const root = style({
     // forced colors replace the dimmed text color with CanvasText, so the disabled label must name the system color itself to stay distinguishable
     '(forced-colors: active)': {
       selectors: {
-        '&:has([data-disabled])': { color: 'GrayText' },
+        '&:has([data-disabled]), &[data-disabled]': { color: 'GrayText' },
       },
     },
   },
 });
 
-export const track = style({
-  vars: {
-    [trackBg]: vars.color.surfaceContainerHighest,
-    [trackBorder]: vars.color.outline,
-    [handleRest]: vars.color.outline,
-    [handleActive]: vars.color.onSurfaceVariant,
-    [handleColor]: handleRest,
-    [handleSize]: '16px',
-    [layerColor]: vars.color.onSurface,
-    [layerOpacity]: '0',
-    [thumbX]: '0px',
-  },
-  position: 'relative',
-  flexShrink: 0,
-  boxSizing: 'border-box',
-  width: 52,
-  height: 32,
-  borderRadius: 16,
-  border: `2px solid ${trackBorder}`,
-  background: trackBg,
-  outline: 'none',
-  transition: 'background-color 67ms linear, border-color 67ms linear',
-  selectors: {
-    '&[data-checked]': {
-      vars: {
-        [trackBg]: vars.color.primary,
-        [trackBorder]: vars.color.primary,
-        [handleRest]: vars.color.onPrimary,
-        [handleActive]: vars.color.primaryContainer,
-        [handleSize]: '24px',
-        [layerColor]: vars.color.primary,
-        // padding-box travel from the start circle's center (14px) to the end circle's (34px)
-        [thumbX]: '20px',
-      },
+// rule order is load-bearing: hovered < focusVisible < pressed < disabled share one specificity per map, so later entries win
+function trackStyle(on: StateSelectors) {
+  return style({
+    vars: {
+      [trackBg]: vars.color.surfaceContainerHighest,
+      [trackBorder]: vars.color.outline,
+      [handleRest]: vars.color.outline,
+      [handleActive]: vars.color.onSurfaceVariant,
+      [handleColor]: handleRest,
+      [handleSize]: '16px',
+      [layerColor]: vars.color.onSurface,
+      [layerOpacity]: '0',
+      [thumbX]: '0px',
     },
-    [`&${interactive}:hover`]: {
-      vars: { [handleColor]: handleActive, [layerOpacity]: '0.08' },
-    },
-    [`&${interactive}:focus-visible, &${interactive}[data-focus-visible]`]: {
-      vars: { [handleColor]: handleActive, [layerOpacity]: '0.12' },
-      outline: `3px solid ${vars.color.secondary}`,
-      outlineOffset: 2,
-    },
-    [`&${interactive}:active, &${interactive}[data-pressed]`]: {
-      vars: {
-        [handleColor]: handleActive,
-        [handleSize]: '28px',
-        [layerOpacity]: '0.12',
-      },
-    },
-    '&[data-disabled]': {
-      vars: {
-        [trackBg]: mix(vars.color.surfaceContainerHighest, 12),
-        [trackBorder]: mix(vars.color.onSurface, 12),
-        [handleRest]: mix(vars.color.onSurface, 38),
-      },
-    },
-    '&[data-disabled][data-checked]': {
-      vars: {
-        [trackBg]: mix(vars.color.onSurface, 12),
-        [trackBorder]: 'transparent',
-        [handleRest]: vars.color.surface,
-      },
-    },
-  },
-  '@media': {
-    // `:hover` sticks after a tap on touch screens, so a hover-only state is undone there. the selector excludes pressed and focused states because this block is emitted after them and would otherwise override them too.
-    '(hover: none)': {
-      selectors: {
-        [`&${interactive}:hover:not(:active):not([data-pressed]):not(:focus-visible):not([data-focus-visible])`]:
-          {
-            vars: { [handleColor]: handleRest, [layerOpacity]: '0' },
-          },
-      },
-    },
-    // Windows high-contrast themes force backgrounds to Canvas, which would erase a handle drawn with `background`. opting the control out and mapping it onto system colors keeps both states legible under any theme.
-    '(forced-colors: active)': {
-      forcedColorAdjust: 'none',
-      vars: {
-        [trackBg]: 'Canvas',
-        [trackBorder]: 'CanvasText',
-        [handleRest]: 'CanvasText',
-        [handleActive]: 'CanvasText',
-        [layerColor]: 'transparent',
-      },
-      selectors: {
-        '&[data-checked]': {
-          vars: {
-            [trackBg]: 'Highlight',
-            [trackBorder]: 'Highlight',
-            [handleRest]: 'HighlightText',
-            [handleActive]: 'HighlightText',
-            [layerColor]: 'transparent',
-          },
+    position: 'relative',
+    flexShrink: 0,
+    boxSizing: 'border-box',
+    width: 52,
+    height: 32,
+    borderRadius: 16,
+    border: `2px solid ${trackBorder}`,
+    background: trackBg,
+    outline: 'none',
+    transition: 'background-color 67ms linear, border-color 67ms linear',
+    selectors: {
+      [on.selected]: {
+        vars: {
+          [trackBg]: vars.color.primary,
+          [trackBorder]: vars.color.primary,
+          [handleRest]: vars.color.onPrimary,
+          [handleActive]: vars.color.primaryContainer,
+          [handleSize]: '24px',
+          [layerColor]: vars.color.primary,
+          // padding-box travel from the start circle's center (14px) to the end circle's (34px)
+          [thumbX]: '20px',
         },
-        // both disabled rules are restated so they outrank the base `[data-disabled][data-checked]` rule, whose non-system colors would otherwise leak through
-        '&[data-disabled], &[data-disabled][data-checked]': {
-          vars: {
-            [trackBg]: 'Canvas',
-            [trackBorder]: 'GrayText',
-            [handleRest]: 'GrayText',
-          },
+      },
+      [on.hovered]: {
+        vars: { [handleColor]: handleActive, [layerOpacity]: '0.08' },
+      },
+      [on.focusVisible]: {
+        vars: { [handleColor]: handleActive, [layerOpacity]: '0.12' },
+        outline: `3px solid ${vars.color.secondary}`,
+        outlineOffset: 2,
+      },
+      [on.pressed]: {
+        vars: {
+          [handleColor]: handleActive,
+          [handleSize]: '28px',
+          [layerOpacity]: '0.12',
         },
-        '&:focus-visible, &[data-focus-visible]': {
-          outlineColor: 'CanvasText',
+      },
+      [on.disabled]: {
+        vars: {
+          [trackBg]: mix(vars.color.surfaceContainerHighest, 12),
+          [trackBorder]: mix(vars.color.onSurface, 12),
+          [handleRest]: mix(vars.color.onSurface, 38),
+        },
+      },
+      [on.disabledSelected]: {
+        vars: {
+          [trackBg]: mix(vars.color.onSurface, 12),
+          [trackBorder]: 'transparent',
+          [handleRest]: vars.color.surface,
         },
       },
     },
-  },
+    '@media': {
+      // the undo rule must exclude pressed and focused states: this block is emitted after them and would otherwise override them too
+      ...(on.stickyHover && {
+        '(hover: none)': {
+          selectors: {
+            [on.stickyHover]: {
+              vars: { [handleColor]: handleRest, [layerOpacity]: '0' },
+            },
+          },
+        },
+      }),
+      // Windows high-contrast themes force backgrounds to Canvas, which would erase a handle drawn with `background`. opting the control out and mapping it onto system colors keeps both states legible under any theme.
+      '(forced-colors: active)': {
+        forcedColorAdjust: 'none',
+        vars: {
+          [trackBg]: 'Canvas',
+          [trackBorder]: 'CanvasText',
+          [handleRest]: 'CanvasText',
+          [handleActive]: 'CanvasText',
+          [layerColor]: 'transparent',
+        },
+        selectors: {
+          [on.selected]: {
+            vars: {
+              [trackBg]: 'Highlight',
+              [trackBorder]: 'Highlight',
+              [handleRest]: 'HighlightText',
+              [handleActive]: 'HighlightText',
+              [layerColor]: 'transparent',
+            },
+          },
+          // both disabled rules are restated so they outrank the base disabled-and-selected rule, whose non-system colors would otherwise leak through
+          [`${on.disabled}, ${on.disabledSelected}`]: {
+            vars: {
+              [trackBg]: 'Canvas',
+              [trackBorder]: 'GrayText',
+              [handleRest]: 'GrayText',
+            },
+          },
+          [on.focusVisible]: {
+            outlineColor: 'CanvasText',
+          },
+        },
+      },
+    },
+  });
+}
+
+const interactive = ':not([data-disabled])';
+
+// state on the track itself: Base UI's track is the focusable `role=switch` element and sets `data-checked`/`data-disabled`, so native `:hover`/`:active`/`:focus-visible` apply directly; the React Aria hooks wrapper mirrors its state onto the same `data-*` names plus `data-pressed`/`data-focus-visible`, since its focusable element is a hidden input.
+export const track = trackStyle({
+  selected: '&[data-checked]',
+  hovered: `&${interactive}:hover`,
+  focusVisible: `&${interactive}:focus-visible, &${interactive}[data-focus-visible]`,
+  pressed: `&${interactive}:active, &${interactive}[data-pressed]`,
+  disabled: '&[data-disabled]',
+  disabledSelected: '&[data-disabled][data-checked]',
+  stickyHover: `&${interactive}:hover:not(:active):not([data-pressed]):not(:focus-visible):not([data-focus-visible])`,
+});
+
+// state on the root label: React Aria Components sets `data-selected`/`-hovered`/`-pressed`/`-focus-visible`/`-disabled` there. its `data-hovered` ignores the emulated mouse events that follow a touch, so this variant needs no sticky-hover undo.
+const onRoot = (attrs: string) => `${root}${attrs} &`;
+export const rootStateTrack = trackStyle({
+  selected: onRoot('[data-selected]'),
+  hovered: onRoot('[data-hovered]'),
+  focusVisible: onRoot('[data-focus-visible]'),
+  pressed: onRoot('[data-pressed]'),
+  disabled: onRoot('[data-disabled]'),
+  disabledSelected: onRoot('[data-disabled][data-selected]'),
 });
 
 // a 40px box centered on the handle: `::before` paints the state layer behind, `::after` the handle itself, so both move with the thumb and the handle can resize without shifting the layer.
