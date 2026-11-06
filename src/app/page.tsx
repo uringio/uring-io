@@ -24,6 +24,18 @@ const PAIRS: [bg: ColorKey, fg: ColorKey][] = [
   ['inverseSurface', 'inverseOnSurface'],
 ];
 
+// the primitive-comparison pages; removed together with them once a behavior library is chosen
+const SPIKE_PAGES: [href: string, title: string][] = [
+  ['/spike/switch-native', 'Switch · 原生对照'],
+  ['/spike/switch-base', 'Switch · Base UI'],
+  ['/spike/switch-base-inline', 'Switch · Base UI（行内布局）'],
+  ['/spike/switch-aria', 'Switch · React Aria'],
+  ['/spike/switch-rac', 'Switch · React Aria Components'],
+  ['/spike/dialog-native', 'Dialog · 原生对照'],
+  ['/spike/dialog-base', 'Dialog · Base UI'],
+  ['/spike/dialog-rac', 'Dialog · React Aria Components'],
+];
+
 export default function Home() {
   return (
     <main className={styles.main}>
@@ -37,23 +49,11 @@ export default function Home() {
             <Link href={`/posts/${post.slug}`}>{post.title}</Link>
           </li>
         ))}
-        <li>
-          <Link href="/spike/switch-base">Switch · Base UI</Link>
-        </li>
-        <li>
-          <Link href="/spike/switch-aria">Switch · React Aria</Link>
-        </li>
-        <li>
-          <Link href="/spike/switch-rac">Switch · React Aria Components</Link>
-        </li>
-        <li>
-          <Link href="/spike/switch-native">Switch · 原生对照</Link>
-        </li>
-        <li>
-          <Link href="/spike/switch-base-inline">
-            Switch · Base UI（行内布局）
-          </Link>
-        </li>
+        {SPIKE_PAGES.map(([href, title]) => (
+          <li key={href}>
+            <Link href={href}>{title}</Link>
+          </li>
+        ))}
       </ul>
       <div className={styles.grid}>
         {PAIRS.map(([bg, fg]) => (
