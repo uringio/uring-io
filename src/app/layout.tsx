@@ -9,8 +9,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    // The inline script sets `data-theme` on <html> before hydration, so React would otherwise
-    // flag the attribute as a server/client mismatch. Suppression applies to this element only.
+    // the inline script sets `data-theme` on <html> before hydration, so React would otherwise flag the attribute as a server/client mismatch. suppression applies to this element only.
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: a fixed build-time string with no user input; it must run inline before first paint */}

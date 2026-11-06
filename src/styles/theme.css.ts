@@ -11,15 +11,11 @@ import {
   globalStyle,
 } from '@vanilla-extract/css';
 
-// MD3 color tokens, computed at build time: vanilla-extract evaluates this module in Node during
-// the build and emits only the resulting static CSS, so the color library never reaches a bundle.
+// MD3 color tokens, computed at build time: vanilla-extract evaluates this module in Node during the build and emits only the resulting static CSS, so the color library never reaches a bundle.
 
 const SEED = '#6750a4';
 
-// The MD3 sys color roles this site exposes. Each entry must name a role method on
-// `MaterialDynamicColors`, so a role the library renames or drops fails the type-check. Palette key
-// colors and the 2025 spec's `*Dim` roles are left out: the former are generator inputs, not
-// roles, and the latter are undefined under some scheme variants.
+// the MD3 sys color roles this site exposes. each entry must name a role method on `MaterialDynamicColors`, so a role the library renames or drops fails the type-check. palette key colors and the 2025 spec's `*Dim` roles are left out: the former are generator inputs, not roles, and the latter are undefined under some scheme variants.
 const ROLES = [
   'primary',
   'onPrimary',
@@ -77,8 +73,7 @@ type Role = (typeof ROLES)[number];
 const toKebab = (camel: string) =>
   camel.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
-// Custom-property names follow the MD3 spec's `--md-sys-color-<role>` so values copied from
-// Material's own docs and tooling apply unchanged.
+// custom-property names follow the MD3 spec's `--md-sys-color-<role>` so values copied from Material's own docs and tooling apply unchanged.
 export const vars = createGlobalThemeContract(
   {
     color: Object.fromEntries(ROLES.map((r) => [r, toKebab(r)])) as Record<
@@ -94,8 +89,7 @@ const light = new SchemeTonalSpot(source, false, 0, '2025');
 const dark = new SchemeTonalSpot(source, true, 0, '2025');
 const colors = new MaterialDynamicColors();
 
-// One declaration per role: `light-dark()` picks its arm from the element's `color-scheme`, so the
-// theme switch below only flips `color-scheme` and never re-emits the tokens.
+// one declaration per role: `light-dark()` picks its arm from the element's `color-scheme`, so the theme switch below only flips `color-scheme` and never re-emits the tokens. under Next's default browserslist, Lightning CSS downlevels `light-dark()` into `--lightningcss-light`/`--lightningcss-dark` toggles keyed on the same `color-scheme` declarations, so the built CSS reads differently but behaves the same.
 createGlobalTheme(':root', vars, {
   color: Object.fromEntries(
     ROLES.map((role) => {
@@ -108,8 +102,7 @@ createGlobalTheme(':root', vars, {
   ) as Record<Role, string>,
 });
 
-// Unset `data-theme` follows the OS; the attribute is the user's explicit override, written
-// before first paint by the inline script in the root layout.
+// unset `data-theme` follows the OS; the attribute is the user's explicit override, written before first paint by the inline script in the root layout.
 globalStyle(':root', { colorScheme: 'light dark' });
 globalStyle(':root[data-theme="light"]', { colorScheme: 'light' });
 globalStyle(':root[data-theme="dark"]', { colorScheme: 'dark' });

@@ -19,15 +19,13 @@ function subscribe(listener: () => void) {
   };
 }
 
-// The <html> attribute, not localStorage, is the source of truth at runtime: the inline script
-// has already copied any stored override onto it before hydration.
+// the <html> attribute, not localStorage, is the source of truth at runtime: the inline script has already copied any stored override onto it before hydration.
 function getSnapshot(): ThemePreference {
   const t = document.documentElement.dataset.theme;
   return t === 'light' || t === 'dark' ? t : 'system';
 }
 
-// The server cannot know the preference; `null` renders a neutral label during hydration, and
-// React re-renders with the real snapshot right after, without a mismatch.
+// the server cannot know the preference; `null` renders a neutral label during hydration, and React re-renders with the real snapshot right after, without a mismatch.
 function getServerSnapshot() {
   return null;
 }
@@ -40,7 +38,7 @@ function setPreference(pref: ThemePreference) {
     if (pref === 'system') localStorage.removeItem(THEME_STORAGE_KEY);
     else localStorage.setItem(THEME_STORAGE_KEY, pref);
   } catch {
-    // Storage unavailable (privacy mode): the choice still applies for this page view.
+    // storage unavailable (privacy mode): the choice still applies for this page view.
   }
   for (const listener of listeners) listener();
 }

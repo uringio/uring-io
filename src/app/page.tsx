@@ -4,8 +4,7 @@ import * as styles from './page.css';
 
 type ColorKey = keyof typeof vars.color;
 
-// Spike page: renders the generated MD3 role pairs so the token pipeline and the theme switch can
-// be checked by eye. Not part of the eventual site.
+// spike page: renders the generated MD3 role pairs so the token pipeline and the theme switch can be checked by eye. it is not part of the eventual site.
 const PAIRS: [bg: ColorKey, fg: ColorKey][] = [
   ['primary', 'onPrimary'],
   ['primaryContainer', 'onPrimaryContainer'],
