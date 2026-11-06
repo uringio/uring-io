@@ -37,6 +37,12 @@ export default function Home() {
             <Link href={`/posts/${post.slug}`}>{post.title}</Link>
           </li>
         ))}
+        <li>
+          <Link href="/spike/switch-base">Switch · Base UI</Link>
+        </li>
+        <li>
+          <Link href="/spike/switch-aria">Switch · React Aria</Link>
+        </li>
       </ul>
       <div className={styles.grid}>
         {PAIRS.map(([bg, fg]) => (
