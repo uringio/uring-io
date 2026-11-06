@@ -1,0 +1,17 @@
+---
+title: Hello MDX
+date: 2026-11-06
+---
+
+这是一篇 spike 用的样例文章，用来验证 MDX 在 server component 里渲染。
+
+## 一个 client island
+
+下面这个计数器是唯一需要在浏览器里 hydrate 的部分：
+
+<Counter />
+
+普通段落、**粗体**、`inline code` 和列表都只是 server 端渲染出的 HTML：
+
+- 第一项
+- 第二项

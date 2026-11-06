@@ -1,3 +1,4 @@
+import { withContentCollections } from '@content-collections/next';
 import { createVanillaExtractPlugin } from '@vanilla-extract/next-plugin';
 import type { NextConfig } from 'next';
 
@@ -11,4 +12,7 @@ const nextConfig: NextConfig = {
   agentRules: false,
 };
 
-export default withVanillaExtract(nextConfig);
+// `withContentCollections` runs the content builder (and, under `next dev`, its watcher) before resolving and returns the config unchanged. it must be awaited: otherwise the bundler can try to resolve the `content-collections` import before `.content-collections/generated` has been written.
+export default async function config(): Promise<NextConfig> {
+  return withVanillaExtract(await withContentCollections(nextConfig));
+}

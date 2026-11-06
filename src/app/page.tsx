@@ -1,3 +1,5 @@
+import { allPosts } from 'content-collections';
+import Link from 'next/link';
 import { vars } from '@/styles/theme.css';
 import { ThemeToggle } from '@/theme/ThemeToggle';
 import * as styles from './page.css';
@@ -29,6 +31,13 @@ export default function Home() {
         <h1>MD3 tokens</h1>
         <ThemeToggle />
       </header>
+      <ul>
+        {allPosts.map((post) => (
+          <li key={post.slug}>
+            <Link href={`/posts/${post.slug}`}>{post.title}</Link>
+          </li>
+        ))}
+      </ul>
       <div className={styles.grid}>
         {PAIRS.map(([bg, fg]) => (
           <div
